@@ -1,0 +1,9 @@
+[tool.importlinter]
+root_package = "ecosystem"
+contract_types = [
+    "relative_only: import_linter_contracts.relative_only.RelativeOnlyContract",
+]
+
+[[tool.importlinter.contracts]]
+name = "Ecosystem internal imports must be relative"
+type = "relative_only"
