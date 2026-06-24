@@ -16,6 +16,8 @@ safety gating:
 - `SubsystemBase` is the base class for objects that need periodic `poll()`
   calls.
 - `GenericMotor` is the base class for safety-gated actuator behavior.
+- `GenericSensor[ReadT]` is the base class for synchronous sensors with a
+  caller-specified read result type.
 - `RobotMode` selects startup hooks such as `on_teleop()` and `on_sim()`.
 
 The intended downstream shape is:
@@ -26,6 +28,7 @@ your-project/
     robot_process.py
     subsystem.py
     motor.py
+    sensor.py
   your_robot_code.py
 ```
 
@@ -108,6 +111,28 @@ class ArmMotor(GenericMotor):
         pass
 ```
 
+Add sensors by subclassing `GenericSensor` with the concrete read type returned
+by `read()`:
+
+```python
+from dataclasses import dataclass
+
+from ecosystem.sensor import GenericSensor
+
+
+@dataclass
+class ImuSample:
+    temperature_c: float
+
+
+class Imu(GenericSensor[ImuSample]):
+    def initialize(self) -> None:
+        pass
+
+    def read(self) -> ImuSample:
+        return ImuSample(temperature_c=20.0)
+```
+
 ## Runtime Semantics
 
 `RobotProcess.run(mode)` starts the selected mode hook, then enters the shared
@@ -125,6 +150,7 @@ poll loop. Each loop cycle:
   timing.
 - `ecosystem/subsystem.py` contains `SubsystemBase`.
 - `ecosystem/motor.py` contains `GenericMotor`.
+- `ecosystem/sensor.py` contains `GenericSensor`.
 - `import_linter_contracts/relative_only.py` enforces relative imports inside
   `ecosystem/`.
 - `Makefile` provides `install-tools` and `lint-imports`.
