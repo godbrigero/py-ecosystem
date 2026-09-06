@@ -11,10 +11,13 @@ RSYNC_EXCLUDES := \
 	--exclude='.venv/' \
 	--exclude='.env'
 
-.PHONY: install-tools lint-imports
+.PHONY: install-tools lint-imports test-sim
 
 lint-imports:
 	PYTHONPATH="$(ROOT_DIR)" lint-imports
+
+test-sim:
+	@echo "No simulation tests to run."
 
 install-tools:
 ifeq ($(strip $(INSTALLATION_PATHS)),)
