@@ -47,7 +47,9 @@ The core idea: one long-running process owns your subsystems and motors. It poll
 - One process that owns your subsystems and motors.
 - A fixed-interval poll loop (and a warning when a cycle runs long).
 - Motors that auto-register and stop the instant the system is unsafe.
-- A typed `GenericSensor[ReadT]` base for synchronous sensor reads.
+- An abstract `GenericSensor[ReadT]` base with async `initialize()`,
+  `read(timeout_s=1.0)`, and `close()`. Initialize once and read repeatedly;
+  async context-manager cleanup is optional.
 - Run modes like teleop and sim from the same process.
 
 ## Drop it in
@@ -64,5 +66,37 @@ Copies the `ecosystem/` folder into your project. Imports are relative, so it ju
 - `ecosystem/robot_process.py` - the central process and poll loop.
 - `ecosystem/motor.py` - base motor that registers itself.
 - `ecosystem/sensor.py` - typed base class for sensors.
+- `ecosystem/imu.py` - processed IMU interface, state, and health.
 
 Only the `ecosystem/` folder goes into your project. Everything else here is for developing ecosystem itself.
+
+## Processed IMU modules
+
+`ecosystem.imu.Imu` specializes `GenericSensor[ImuState]` for fused inertial
+modules. Implement `initialize()`, `read(timeout_s=1.0)`, `close()`, and the
+`latest_health` property. `ImuState` requires orientation, position, velocity,
+linear acceleration, angular velocity, and angular acceleration. Its documented
+frames and SI units are shared by hardware and simulation. `ImuHealth` is a
+separate immutable cached update with its own source timestamp.
+
+Keep USB, Autobahn, protobuf decoding, and estimators in downstream adapters.
+The core has no transport dependencies and does no filtering or integration.
+Use `GenericSensor[T]` for other sensors; add specialized contracts only when
+their data or capabilities need a common semantic interface.
+
+```python
+from ecosystem.imu import Imu
+
+
+async def consume(imu: Imu):
+    await imu.initialize()
+    try:
+        while True:
+            state = await imu.read()
+            # Use state.orientation_wxyz, state.velocity_m_s, etc.
+            # imu.latest_health is a separate cached update, possibly None.
+    finally:
+        await imu.close()
+```
+
+Pass a hardware or simulation implementation to the same loop.

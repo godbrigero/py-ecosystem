@@ -16,7 +16,7 @@ safety gating:
 - `SubsystemBase` is the base class for objects that need periodic `poll()`
   calls.
 - `GenericMotor` is the base class for safety-gated actuator behavior.
-- `GenericSensor[ReadT]` is the base class for synchronous sensors with a
+- `GenericSensor[ReadT]` is the abstract base class for asynchronous sensors with a
   caller-specified read result type.
 - `RobotMode` selects startup hooks such as `on_teleop()` and `on_sim()`.
 
@@ -29,6 +29,7 @@ your-project/
     subsystem.py
     motor.py
     sensor.py
+    imu.py
   your_robot_code.py
 ```
 
@@ -121,17 +122,27 @@ from ecosystem.sensor import GenericSensor
 
 
 @dataclass
-class ImuSample:
+class TemperatureSample:
     temperature_c: float
 
 
-class Imu(GenericSensor[ImuSample]):
-    def initialize(self) -> None:
+class TemperatureSensor(GenericSensor[TemperatureSample]):
+    async def initialize(self) -> None:
         pass
 
-    def read(self) -> ImuSample:
-        return ImuSample(temperature_c=20.0)
+    async def read(self, timeout_s: float = 1.0) -> TemperatureSample:
+        self._check_timeout(timeout_s)
+        return TemperatureSample(temperature_c=20.0)
+
+    async def close(self) -> None:
+        pass
 ```
+
+Create a sensor once, `await sensor.initialize()`, and call `await sensor.read()`
+in the application loop. Close it with `await sensor.close()` in a `finally`
+block. `async with sensor` is an optional shortcut for initialization/cleanup.
+All three lifecycle methods are abstract; implementations must provide them.
+Use the same event loop for a sensor's lifetime.
 
 ## Runtime Semantics
 
@@ -151,6 +162,7 @@ poll loop. Each loop cycle:
 - `ecosystem/subsystem.py` contains `SubsystemBase`.
 - `ecosystem/motor.py` contains `GenericMotor`.
 - `ecosystem/sensor.py` contains `GenericSensor`.
+- `ecosystem/imu.py` contains the processed `Imu`, `ImuState`, and `ImuHealth` contract.
 - `import_linter_contracts/relative_only.py` enforces relative imports inside
   `ecosystem/`.
 - `Makefile` provides `install-tools` and `lint-imports`.
@@ -189,3 +201,17 @@ make install-tools INSTALLATION_PATHS="/tmp/ecosystem-smoke"
 
 Then inspect `/tmp/ecosystem-smoke/ecosystem/` to confirm the copied shape is
 what downstream projects should receive.
+
+## Processed IMU modules
+
+`ecosystem.imu.Imu` specializes `GenericSensor[ImuState]` for fused inertial
+modules. Implement `initialize()`, `read(timeout_s=1.0)`, `close()`, and the
+`latest_health` property. `ImuState` requires orientation, position, velocity,
+linear acceleration, angular velocity, and angular acceleration. Its documented
+frames and SI units are shared by hardware and simulation. `ImuHealth` is a
+separate immutable cached update with its own source timestamp.
+
+Keep USB, Autobahn, protobuf decoding, and estimators in downstream adapters.
+The core has no transport dependencies and does no filtering or integration.
+Use `GenericSensor[T]` for other sensors; add specialized contracts only when
+their data or capabilities need a common semantic interface.
