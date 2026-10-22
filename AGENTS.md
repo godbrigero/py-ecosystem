@@ -30,6 +30,7 @@ your-project/
     motor.py
     sensor.py
     imu.py
+    camera.py
   your_robot_code.py
 ```
 
@@ -163,6 +164,8 @@ poll loop. Each loop cycle:
 - `ecosystem/motor.py` contains `GenericMotor`.
 - `ecosystem/sensor.py` contains `GenericSensor`.
 - `ecosystem/imu.py` contains the processed `Imu`, `ImuState`, and `ImuHealth` contract.
+- `ecosystem/camera.py` contains the `Camera`, `CameraFrame`, `CameraInfo`, and
+  `PixelFormat` contract.
 - `import_linter_contracts/relative_only.py` enforces relative imports inside
   `ecosystem/`.
 - `Makefile` provides `install-tools` and `lint-imports`.
@@ -215,3 +218,19 @@ Keep USB, Autobahn, protobuf decoding, and estimators in downstream adapters.
 The core has no transport dependencies and does no filtering or integration.
 Use `GenericSensor[T]` for other sensors; add specialized contracts only when
 their data or capabilities need a common semantic interface.
+
+## Cameras
+
+`ecosystem.camera.Camera` specializes `GenericSensor[CameraFrame]` for cameras
+delivering uncompressed 8-bit images (`mono8`, `rgb8`, `bgr8`). Implement the
+lifecycle methods and the `info` property (`CameraInfo`: delivered size, pixel
+format, rate, optical frame id, sensor color, optional pinhole intrinsics).
+Monochrome sensors (`SensorColor.MONO`) must deliver `mono8`; color sensors
+may deliver any format. `read()` returns
+the newest frame not yet returned, drops older ones, and raises `TimeoutError`
+instead of repeating a frame. `CameraFrame.data` is any contiguous byte buffer;
+rows may be padded (`row_step_bytes`), so a `memoryview` over a NumPy array can
+be passed without copying.
+
+Keep CSI/libcamera, USB/V4L2, Autobahn, decoding, and image processing in
+downstream adapters. The core stays dependency-free.

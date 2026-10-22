@@ -67,6 +67,7 @@ Copies the `ecosystem/` folder into your project. Imports are relative, so it ju
 - `ecosystem/motor.py` - base motor that registers itself.
 - `ecosystem/sensor.py` - typed base class for sensors.
 - `ecosystem/imu.py` - processed IMU interface, state, and health.
+- `ecosystem/camera.py` - camera interface, frame, stream info, and pixel formats.
 
 Only the `ecosystem/` folder goes into your project. Everything else here is for developing ecosystem itself.
 
