@@ -24,9 +24,11 @@ class ImuPhase(IntEnum):
 class ImuState:
     """Complete processed state in SI units; never raw accelerometer data.
 
-    Orientation (w, x, y, z) rotates body vectors into the boot frame.
-    Position is relative to the boot origin. Linear quantities use that fixed
-    frame, acceleration excludes gravity, and angular quantities use body axes.
+    Orientation (w, x, y, z) rotates body vectors into a gravity-aligned local
+    frame (+Z up) whose heading is zero at boot, so roll and pitch are relative
+    to gravity and yaw to the boot heading. Position is relative to the boot
+    origin. Linear quantities use that fixed frame, acceleration excludes
+    gravity, and angular quantities use body axes.
     Timestamps belong to the source clock (device uptime wraps after 2**32 ms),
     not wall time. Simulation time can reset when a world restarts.
     """
