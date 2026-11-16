@@ -75,8 +75,8 @@ Only the `ecosystem/` folder goes into your project. Everything else here is for
 
 `ecosystem.imu.Imu` specializes `GenericSensor[ImuState]` for fused inertial
 modules. Implement `initialize()`, `read(timeout_s=1.0)`, `close()`, and the
-`latest_health` property. `ImuState` requires orientation, position, velocity,
-linear acceleration, angular velocity, and angular acceleration. Its documented
+`latest_health` property. `ImuState` requires orientation and bias-corrected
+angular velocity (attitude only: no position, velocity or acceleration). Its documented
 frames and SI units are shared by hardware and simulation. `ImuHealth` is a
 separate immutable cached update with its own source timestamp.
 
@@ -94,7 +94,7 @@ async def consume(imu: Imu):
     try:
         while True:
             state = await imu.read()
-            # Use state.orientation_wxyz, state.velocity_m_s, etc.
+            # Use state.orientation_wxyz, state.angular_velocity_rad_s.
             # imu.latest_health is a separate cached update, possibly None.
     finally:
         await imu.close()

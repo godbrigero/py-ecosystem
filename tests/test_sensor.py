@@ -87,9 +87,7 @@ def test_processed_imu_requires_complete_state_and_health_interface():
         MissingHealth()
     with pytest.raises(TypeError):
         ImuState(timestamp_s=1, timestamp_clock="simulation")
-    state = ImuState(1, "simulation", (1, 0, 0, 0), (0, 0, 0), (0, 0, 0),
-                     (0, 0, 0), (0, 0, 0), (0, 0, 0))
+    state = ImuState(1, "simulation", (1, 0, 0, 0), (0, 0, 0))
     with pytest.raises(FrozenInstanceError):
-        state.position_m = (1, 2, 3)
-    assert state.acceleration_frame == "boot"
-    assert not state.acceleration_includes_gravity
+        state.angular_velocity_rad_s = (1, 2, 3)
+    assert state.angular_velocity_frame == "body"

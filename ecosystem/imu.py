@@ -22,13 +22,13 @@ class ImuPhase(IntEnum):
 
 @dataclass(frozen=True, slots=True)
 class ImuState:
-    """Complete processed state in SI units; never raw accelerometer data.
+    """Processed attitude and body rates in SI units; never raw samples.
 
     Orientation (w, x, y, z) rotates body vectors into a gravity-aligned local
     frame (+Z up) whose heading is zero at boot, so roll and pitch are relative
-    to gravity and yaw to the boot heading. Position is relative to the boot
-    origin. Linear quantities use that fixed frame, acceleration excludes
-    gravity, and angular quantities use body axes.
+    to gravity and yaw to the boot heading. Angular velocity is bias-corrected
+    and uses body axes. The module estimates attitude only: no position,
+    velocity or acceleration.
     Timestamps belong to the source clock (device uptime wraps after 2**32 ms),
     not wall time. Simulation time can reset when a world restarts.
     """
@@ -36,14 +36,8 @@ class ImuState:
     timestamp_s: float
     timestamp_clock: Clock
     orientation_wxyz: Quaternion
-    position_m: Vector3
-    velocity_m_s: Vector3
-    acceleration_m_s2: Vector3
     angular_velocity_rad_s: Vector3
-    angular_acceleration_rad_s2: Vector3
 
-    acceleration_frame: ClassVar[str] = "boot"
-    acceleration_includes_gravity: ClassVar[bool] = False
     angular_velocity_frame: ClassVar[str] = "body"
 
 
